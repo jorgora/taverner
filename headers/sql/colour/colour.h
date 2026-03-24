@@ -17,5 +17,4 @@ void colour_insert(sqlite3* db);
 
 //create the actual table
 int colour_create(sqlite3* db);
-
 #endif

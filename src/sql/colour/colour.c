@@ -3,8 +3,7 @@
 
 #include "../../../headers/sql/colour/colour.h"
 
-//data for colours
-Colour colour_list[] = {
+Colour colour_data[] = {
     {"colourless", 255, 255, 255},
     {"black", 0, 0, 0},
     {"white", 255, 255, 255},
@@ -75,6 +74,7 @@ void colour_init(sqlite3* db)
         "b INTEGER NOT NULL CHECK(b >= 0 AND b <= 255));";
 
     char* err_msg = 0;
+
     int rc = sqlite3_exec(db, create_table_sql, 0, 0, &err_msg);
 
     //handle sql error
@@ -94,6 +94,7 @@ void colour_insert(sqlite3* db)
 {
     const char* insert_sql = "INSERT INTO colour (name, r, g, b) VALUES (?, ?, ?, ?)";
     sqlite3_stmt* stmt;
+    
     int rc = sqlite3_prepare_v2(db, insert_sql, -1, &stmt, 0);
 
     //handle sql error
@@ -103,15 +104,17 @@ void colour_insert(sqlite3* db)
         return;
     }
 
-    // Loop through the colour list and insert each colour
-    for (size_t i = 0; i < sizeof(colour_list) / sizeof(colour_list[0]); i++)
+    // Loop through the colour data and insert each colour
+    for (size_t i = 0; i < sizeof(colour_data) / sizeof(colour_data[0]); i++)
     {
-        sqlite3_bind_text(stmt, 1, colour_list[i].name, -1, SQLITE_STATIC);
-        sqlite3_bind_int(stmt, 2, colour_list[i].r);
-        sqlite3_bind_int(stmt, 3, colour_list[i].g);
-        sqlite3_bind_int(stmt, 4, colour_list[i].b);
+        sqlite3_bind_text(stmt, 1, colour_data[i].name, -1, SQLITE_STATIC);
+        sqlite3_bind_int(stmt, 2, colour_data[i].r);
+        sqlite3_bind_int(stmt, 3, colour_data[i].g);
+        sqlite3_bind_int(stmt, 4, colour_data[i].b);
 
         rc = sqlite3_step(stmt);
+
+        //handle insert error
         if (rc != SQLITE_DONE)
         {
             printf("Failed to insert data: %s\n", sqlite3_errmsg(db));
@@ -120,7 +123,9 @@ void colour_insert(sqlite3* db)
         sqlite3_reset(stmt);
     }
 
+    //commit changes to the actual actual
     sqlite3_finalize(stmt);
+
     printf("Colours inserted successfully\n");
 }
 
