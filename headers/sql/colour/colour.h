@@ -3,6 +3,7 @@
 
 #include <sqlite3.h>
 
+// colour struct
 typedef struct
 {
     const char* name;
@@ -11,10 +12,11 @@ typedef struct
     int b;
 } Colour;
 
-//init functions
-void colour_init(sqlite3* db);
-void colour_insert(sqlite3* db);
+// init functions
+int colour_init(sqlite3* db);
+int colour_insert(sqlite3* db);
 
-//create the actual table
+// init and insert data
 int colour_create(sqlite3* db);
+
 #endif

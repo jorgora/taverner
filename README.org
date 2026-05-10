@@ -1,3 +1,11 @@
 This is my game.
 
 Moving Code over to it from another folder, making sure it works, making it in C. 
+
+Moving this from python has caused some translation errors.
+
+* [ ] Make functions that manipulate sql return int like return SQLITE_OK;
+
+make functions return an int instead of being void.
+
+now the functions report back wether they fail or not, and don't just fire off

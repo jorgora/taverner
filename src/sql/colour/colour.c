@@ -63,7 +63,7 @@ Colour colour_data[] = {
 };
 
 // create empty table
-void colour_init(sqlite3* db)
+int colour_init(sqlite3* db)
 {
     const char* create_table_sql = 
         "CREATE TABLE IF NOT EXISTS colour ("
@@ -77,34 +77,37 @@ void colour_init(sqlite3* db)
 
     int rc = sqlite3_exec(db, create_table_sql, 0, 0, &err_msg);
 
-    //handle sql error
     if (rc != SQLITE_OK)
     {
+        // handle sql error
         fprintf(stderr, "SQL error: %s\n", err_msg);
         sqlite3_free(err_msg);
+        return rc;
     }
     else
     {
+        // exit
         printf("Table created successfully\n");
+        return SQLITE_OK;
     }
 }
 
-// put the colours into the table
-void colour_insert(sqlite3* db)
+// insert colours into the table
+int colour_insert(sqlite3* db)
 {
     const char* insert_sql = "INSERT INTO colour (name, r, g, b) VALUES (?, ?, ?, ?)";
     sqlite3_stmt* stmt;
     
     int rc = sqlite3_prepare_v2(db, insert_sql, -1, &stmt, 0);
 
-    //handle sql error
     if (rc != SQLITE_OK)
     {
+        //handle sql error
         printf("Failed to prepare statement\n");
-        return;
+        return rc;
     }
 
-    // Loop through the colour data and insert each colour
+    // Loop through colour data and insert each colour
     for (size_t i = 0; i < sizeof(colour_data) / sizeof(colour_data[0]); i++)
     {
         sqlite3_bind_text(stmt, 1, colour_data[i].name, -1, SQLITE_STATIC);
@@ -114,22 +117,25 @@ void colour_insert(sqlite3* db)
 
         rc = sqlite3_step(stmt);
 
-        //handle insert error
         if (rc != SQLITE_DONE)
         {
+            //handle insert error
             printf("Failed to insert data: %s\n", sqlite3_errmsg(db));
+            return rc;
         }
 
         sqlite3_reset(stmt);
     }
 
-    //commit changes to the actual actual
+    //commit changes to database
     sqlite3_finalize(stmt);
 
+    //exit
     printf("Colours inserted successfully\n");
+    return SQLITE_OK;
 }
 
-// function both inits and inserts data
+// init and insert data
 int colour_create(sqlite3* db)
 {
     colour_init(db);
