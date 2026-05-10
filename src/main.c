@@ -10,9 +10,9 @@ void handle_cmd_args(int argc, char** argv)
     if (argc > 1)
     {
         printf("Command-line Arguments\n");
-        for (size_t i = 1; (int)i < argc; i++)
+        for (int i = 1; (int)i < argc; i++)
         {
-            printf("\tArg(%d):\t%s\n", (int)i, argv[i]);
+            printf("\tArg(%d):\t%s\n", i, argv[i]);
         }
 
         printf("\n");
