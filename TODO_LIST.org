@@ -1,0 +1,12 @@
+#+title: Todo List
+
+This only really works when open in emacs (or an editor that supports org mode). Github doesn't even show the TODO and DONE
+tags.
+
+
+* TODO Make functions that manipulate sql return int like return SQLITE_OK;
+TODO
+
+make functions return an int instead of being void.
+
+now the functions report back wether they fail or not, and don't just fire off
