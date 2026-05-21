@@ -10,3 +10,12 @@ TODO
 make functions return an int instead of being void.
 
 now the functions report back wether they fail or not, and don't just fire off
+
+* TODO general housekeeping
+TODO
+
+C seems to need a LOT of housekeeping or it gets terrible fast.
+
+make sure comments are correct and not rambling
+
+make sure no awful code is included
