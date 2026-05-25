@@ -2,5 +2,5 @@ This is my game.
 
 Moving Code over to it from another folder, making sure it works, making it in C. 
 
-Moving this from python has caused some translation errors.
+Moving this from python is causing some translation issues.
 
