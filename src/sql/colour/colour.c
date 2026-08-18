@@ -3,6 +3,8 @@
 
 #include "../../../headers/sql/colour/colour.h"
 
+// colour data to insert into sqlite table
+// each row is name, r, g, b
 Colour colour_data[] = {
     {"colourless", 255, 255, 255},
     {"black", 0, 0, 0},
@@ -65,6 +67,7 @@ Colour colour_data[] = {
 // create empty table
 int colour_init(sqlite3* db)
 {
+    // sqlite create_table query
     const char* create_table_sql = 
         "CREATE TABLE IF NOT EXISTS colour ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -73,72 +76,137 @@ int colour_init(sqlite3* db)
         "g INTEGER NOT NULL CHECK(g >= 0 AND g <= 255), "
         "b INTEGER NOT NULL CHECK(b >= 0 AND b <= 255));";
 
-    char* err_msg = 0;
+    // pointer to store error message
+    char* err_msg = NULL;
 
-    int rc = sqlite3_exec(db, create_table_sql, 0, 0, &err_msg);
+    // execute sqlite function (store result in int)
+    // the nulls are callback function and callback args
+    int rc = sqlite3_exec(db, create_table_sql, NULL, NULL, &err_msg);
 
+    // error handling
     if (rc != SQLITE_OK)
     {
-        // handle sql error
-        fprintf(stderr, "SQL error: %s\n", err_msg);
+        fprintf(stderr, "colour table insert fail: %s\n", err_msg);
         sqlite3_free(err_msg);
-        return rc;
     }
     else
     {
-        // exit
-        printf("Table created successfully\n");
-        return SQLITE_OK;
+        printf("colour table init sucess\n");
     }
+
+    // return the return code
+    return rc;
 }
 
 // insert colours into the table
 int colour_insert(sqlite3* db)
 {
+    // variable to avoid magic numbers
+    const int NULL_TERMINATED_STRING = -1;
+
+    //sqlite insert query
     const char* insert_sql = "INSERT INTO colour (name, r, g, b) VALUES (?, ?, ?, ?)";
+
+    // pointer to store sqlite statement object
     sqlite3_stmt* stmt;
-    
-    int rc = sqlite3_prepare_v2(db, insert_sql, -1, &stmt, 0);
+
+    // prepare sqlite statement (store result in int)
+    // prepare for repeated use (sqlite3_step)
+    // prepare does not return an errmsg
+    int rc = sqlite3_prepare_v2(db, insert_sql, -1, &stmt, NULL);
+
+    // handle errors
+    if (rc != SQLITE_OK)
+    {
+        fprintf(stderr, "colour insert prepare fail: %s\n", sqlite3_errmsg(db));
+        return rc;
+    }
+
+    // Begin transaction (avoids numerous individuals writes)
+    sqlite3_exec(db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
+
 
     if (rc != SQLITE_OK)
     {
-        //handle sql error
-        printf("Failed to prepare statement\n");
+        fprintf(stderr, "colour insert transaction fail: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
         return rc;
     }
 
     // Loop through colour data and insert each colour
     for (size_t i = 0; i < sizeof(colour_data) / sizeof(colour_data[0]); i++)
     {
-        sqlite3_bind_text(stmt, 1, colour_data[i].name, -1, SQLITE_STATIC);
+        sqlite3_bind_text(stmt, 1, colour_data[i].name, NULL_TERMINATED_STRING, SQLITE_STATIC);
         sqlite3_bind_int(stmt, 2, colour_data[i].r);
         sqlite3_bind_int(stmt, 3, colour_data[i].g);
         sqlite3_bind_int(stmt, 4, colour_data[i].b);
 
+        // insert one row of sqlite
         rc = sqlite3_step(stmt);
 
+        // error handling
         if (rc != SQLITE_DONE)
         {
-            //handle insert error
-            printf("Failed to insert data: %s\n", sqlite3_errmsg(db));
+            // rollback
+            fprintf(stderr, "colour insert '%s' fail: %s\n", colour_data[i].name, sqlite3_errmsg(db));
+            printf("rolling back changes");
+            sqlite3_exec(db, "ROLLBACK;", 0, 0, 0);
+            sqlite3_finalize(stmt);
             return rc;
         }
 
-        sqlite3_reset(stmt);
+        // prepare for another sqlite_step(stmt)
+        rc = sqlite3_reset(stmt);
+
+        // error handling
+        if (rc != SQLITE_OK)
+        {
+            fprintf(stderr, "colour insert reset fail after '%s': %s\n", colour_data[i].name, sqlite3_errmsg(db));
+            printf("rolling back changes");
+            sqlite3_exec(db, "ROLLBACK;", NULL, NULL, NULL);
+            sqlite3_finalize(stmt);
+            return rc;
+        }
+
+        // explicitly set all parameters back to NULL (not necessary currently, may be removed)
+        sqlite3_clear_bindings(stmt);
     }
+
+    // commit transaction
+    sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
 
     //commit changes to database
     sqlite3_finalize(stmt);
 
     //exit
-    printf("Colours inserted successfully\n");
-    return SQLITE_OK;
+    printf("colour insert into colour table success\n");
+    return rc;
 }
 
 // init and insert data
 int colour_create(sqlite3* db)
 {
-    colour_init(db);
-    colour_insert(db);
-    return 0;
+    // init return code
+    int rc = 0;
+
+    // init colour table
+    rc = colour_init(db);
+
+    // handle error
+    if (rc != SQLITE_OK)
+    {
+        return rc;
+    }
+
+    // insert colour data into colour table
+    rc = colour_insert(db);
+
+    // handle error
+    if (rc != SQLITE_OK)
+    {
+        return rc;
+    }
+
+    // return the return code
+    return rc;
 }
