@@ -27,25 +27,27 @@ int main(int argc, char** argv)
     // create db pointer
     sqlite3* db;
 
-    //use pointer to open databse
+    // use pointer to open databse
     int rc = sqlite3_open("taverner.db", &db);
 
-    //handle database not openning
+    // handle database not openning
     if (rc)
     {
+        // if fail
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
         return 0;
     }
     else
     {
+        // if success
         printf("Opened database successfully\n");
+
+        // create colour table
+        colour_create(db);
+
+        // close database
+        sqlite3_close(db);
     }
-
-    // create colour table
-    colour_create(db);
-
-    // close database
-    sqlite3_close(db);
 
     // end program
     return EXIT_SUCCESS;
