@@ -4,6 +4,7 @@
 #include "../../../headers/sql/colour/colour_keyword_relation.h"
 #include "../../../headers/sql/colour/colour.h"
 #include "../../../headers/sql/colour/colour_keyword.h"
+#include "../../../headers/sql/sql_utils.h"
 
 
 typedef enum {
@@ -196,7 +197,7 @@ static const ColourKeywordRelation colour_keyword_relation_data[] = {
     {"light green", "green"},
 
     // yellow
-    {"yellow", "primary additive"},
+    {"yellow", "primary subtractive"},
     {"yellow", "vivid"},
     {"yellow", "bold"},
     {"yellow", "yellow"},
@@ -233,7 +234,7 @@ static const ColourKeywordRelation colour_keyword_relation_data[] = {
     {"violet", "romantic"},
     {"violet", "purple"},
 
-    {"magenta", "primary additive"},
+    {"magenta", "primary subtractive"},
     {"magenta", "vivid"},
     {"magenta", "bold"},
     {"magenta", "purple"},
@@ -283,11 +284,10 @@ static const ColourKeywordRelation colour_keyword_relation_data[] = {
     {"platinum", "cool"}
 };
 
-
 // Create empty table
 int colour_keyword_relation_init(sqlite3* db)
 {
-    const char* create_table_sql =
+    const char* create_table_query =
         "CREATE TABLE IF NOT EXISTS colour_keyword_relation ("
         "colour INTEGER NOT NULL, "
         "keyword INTEGER NOT NULL, "
@@ -295,29 +295,7 @@ int colour_keyword_relation_init(sqlite3* db)
         "FOREIGN KEY (keyword) REFERENCES colour_keyword(id), "
         "PRIMARY KEY (colour, keyword));";
 
-    int return_code = sqlite3_exec(
-        db,
-        create_table_sql,
-        NULL,
-        NULL,
-        NULL
-    );
-
-    // Handle error
-    if (return_code != SQLITE_OK)
-    {
-        fprintf(
-            stderr,
-            "colour_keyword_relation_init fail: %s\n",
-            sqlite3_errmsg(db)
-        );
-
-        return return_code;
-    }
-
-    printf("colour_keyword_relation_init success\n");
-
-    return SQLITE_OK;
+    return sql_exec("colour_keyword_relation_init", db, create_table_query);
 }
 
 
@@ -351,30 +329,8 @@ int colour_keyword_relation_insert(sqlite3* db)
         return return_code;
     }
 
-
-    // Begin transaction
-    return_code = sqlite3_exec(
-        db,
-        "BEGIN TRANSACTION;",
-        NULL,
-        NULL,
-        NULL
-    );
-
-    // Handle error
-    if (return_code != SQLITE_OK)
-    {
-        fprintf(
-            stderr,
-            "colour_keyword_relation_insert transaction fail: %s\n",
-            sqlite3_errmsg(db)
-        );
-
-        sqlite3_finalize(stmt);
-
-        return return_code;
-    }
-
+    // Begin transaction (avoids numerous individuals writes)
+    return_code = sql_exec("colour_keyword_relation_insert_begin_transaction", db, "BEGIN TRANSACTION;");
 
     // Loop through relation data
     size_t relation_count =
@@ -581,23 +537,11 @@ int colour_keyword_relation_insert(sqlite3* db)
 
 
     // Commit transaction
-    return_code = sqlite3_exec(
-        db,
-        "COMMIT;",
-        NULL,
-        NULL,
-        NULL
-    );
+    return_code = sql_exec("colour_keyword_relation_insert_commit", db, "COMMIT");
 
     // Handle error
     if (return_code != SQLITE_OK)
     {
-        fprintf(
-            stderr,
-            "colour_keyword_relation_insert commit fail: %s\n",
-            sqlite3_errmsg(db)
-        );
-
         sqlite3_exec(
             db,
             "ROLLBACK;",
@@ -623,7 +567,7 @@ int colour_keyword_relation_insert(sqlite3* db)
 int colour_keyword_relation_create_view(sqlite3* db)
 {
     //create view query
-    const char* create_view_sql =
+    const char* sql_create_view_query =
         "CREATE VIEW IF NOT EXISTS colour_keyword_relation_view AS "
         "SELECT "
             "t.colour AS colour_id, "
@@ -636,29 +580,9 @@ int colour_keyword_relation_create_view(sqlite3* db)
         "INNER JOIN colour_keyword AS k "
             "ON t.keyword = k.id;";
 
-    int return_code = sqlite3_exec(
-        db,
-        create_view_sql,
-        NULL,
-        NULL,
-        NULL
-    );
 
-    if (return_code != SQLITE_OK)
-    {
-        fprintf(
-            stderr,
-            "colour_keyword_relation_create_view fail: %s\n",
-            sqlite3_errmsg(db)
-        );
-
-        return return_code;
-    }
-
-    printf("colour_keyword_relation_create_view success\n");
-
-    return SQLITE_OK;
-}
+    return sql_exec("colour_keyword_relation_create_view", db, sql_create_view_query);
+ }
 
 // Init then insert data into table. create view
 int colour_keyword_relation_create(sqlite3* db)

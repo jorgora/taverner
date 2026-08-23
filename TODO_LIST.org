@@ -4,14 +4,15 @@ This only really works when open in emacs (or an editor that supports org mode).
 tags.
 
 
-* TODO Make functions that manipulate sql return int like return SQLITE_OK;
+* GENERAL
+** TODO Make functions that manipulate sql return int like return SQLITE_OK;
 TODO
 
 make functions return an int instead of being void.
 
-now the functions report back wether they fail or not, and don't just fire off
+now the functions report back wether they fail or not, and don't just fire off.
 
-* TODO general housekeeping
+** TODO general housekeeping
 TODO
 
 C seems to need a LOT of housekeeping or it gets terrible fast.
@@ -19,3 +20,12 @@ C seems to need a LOT of housekeeping or it gets terrible fast.
 make sure comments are correct and not rambling
 
 make sure no awful code is included
+
+** TODO recheck think of refactoring opportunities
+
+I think a basic_table abstraction can be made. If not this, abstractions
+to what goes on in all c files would be handy, a sql_utils.c for handling
+this shit more smoothly
+
+* DONE DONE TASKS
+** DONE made sure top level comments are correct and consistent
