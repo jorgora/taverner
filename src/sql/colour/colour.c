@@ -3,107 +3,109 @@
 
 #include "../../../headers/sql/colour/colour.h"
 
+// enum to show binds in function (remove magic number)
+typedef enum {
+    COLOUR_NAME_BIND = 1,
+    COLOUR_R_BIND = 2,
+    COLOUR_G_BIND = 3,
+    COLOUR_B_BIND = 4
+} ColourBindParam;
+
+// Database string configuration constant
+static const int STR_AUTO_LENGTH = -1;
+
 // colour data to insert into sqlite table
-// each row is name, r, g, b
-Colour colour_data[] = {
-    {"colourless", 255, 255, 255},
-    {"black", 0, 0, 0},
-    {"white", 255, 255, 255},
-    {"light grey", 192, 192, 192},
-    {"grey", 128, 128, 128},
-    {"dark grey", 64, 64, 64},
-    {"onyx", 53, 56, 57},
-    {"jet", 52, 52, 52},
-    {"oxford blue", 0, 33, 71},
-    {"navy", 0, 0, 128},
-    {"midnight blue", 25, 25, 112},
-    {"sapphire", 15, 82, 186},
-    {"blue", 0, 0, 255},
-    {"azure", 0, 127, 255},
-    {"steel blue", 70, 130, 180},
-    {"royal blue", 65, 105, 225},
-    {"cyan", 0, 255, 255},
-    {"turquoise", 64, 224, 208},
-    {"sky blue", 135, 206, 235},
-    {"light blue", 173, 216, 230},
-    {"teal", 0, 128, 128},
-    {"maroon", 139, 0, 0},
-    {"red", 255, 0, 0},
-    {"rusty red", 183, 65, 14},
-    {"ruby", 224, 17, 95},
-    {"salmon", 250, 128, 114},
-    {"hot pink", 255, 105, 180},
-    {"pink", 255, 182, 193},
-    {"rose", 255, 0, 127},
-    {"peach", 255, 218, 185},
-    {"dark green", 0, 100, 0},
-    {"green", 0, 128, 0},
-    {"sea green", 46, 139, 87},
-    {"apple green", 141, 182, 0},
-    {"emerald", 80, 200, 120},
-    {"lime", 96, 255, 96},
-    {"light green", 144, 238, 144},
-    {"yellow", 255, 255, 0},
-    {"dark yellow", 204, 204, 0},
-    {"amber", 255, 191, 0},
-    {"lavender", 230, 230, 250},
-    {"purple", 128, 0, 128},
-    {"indigo", 75, 0, 130},
-    {"bluebell", 162, 162, 208},
-    {"violet", 138, 43, 226},
-    {"magenta", 255, 0, 255},
-    {"orange", 255, 165, 0},
-    {"dark orange", 255, 140, 0},
-    {"tan", 210, 180, 140},
-    {"brown", 165, 42, 42},
-    {"dark brown", 101, 67, 33},
-    {"chrome", 160, 160, 160},
-    {"silver", 192, 192, 192},
-    {"gold", 239, 191, 4},
-    {"brass", 181, 166, 66},
-    {"platinum", 229, 228, 226}
+static const Colour colour_data[] = {
+//  {name               R,   G,   B},
+    {"colourless",    255, 255, 255},
+    {"black",           0,   0,   0},
+    {"white",         255, 255, 255},
+    {"light grey",    192, 192, 192},
+    {"grey",          128, 128, 128},
+    {"dark grey",      64,  64,  64},
+    {"onyx",           53,  56,  57},
+    {"jet",            52,  52,  52},
+    {"oxford blue",     0,  33,  71},
+    {"navy",            0,   0, 128},
+    {"midnight blue",  25,  25, 112},
+    {"sapphire",       15,  82, 186},
+    {"blue",            0,   0, 255},
+    {"azure",           0, 127, 255},
+    {"steel blue",     70, 130, 180},
+    {"royal blue",     65, 105, 225},
+    {"cyan",            0, 255, 255},
+    {"turquoise",      64, 224, 208},
+    {"sky blue",      135, 206, 235},
+    {"light blue",    173, 216, 230},
+    {"teal",            0, 128, 128},
+    {"maroon",        139,   0,   0},
+    {"red",           255,   0,   0},
+    {"rusty red",     183,  65,  14},
+    {"ruby",          224,  17,  95},
+    {"salmon",        250, 128, 114},
+    {"hot pink",      255, 105, 180},
+    {"pink",          255, 182, 193},
+    {"rose",          255,   0, 127},
+    {"peach",         255, 218, 185},
+    {"dark green",      0, 100,   0},
+    {"green",           0, 128,   0},
+    {"sea green",      46, 139,  87},
+    {"apple green",   141, 182,   0},
+    {"emerald",        80, 200, 120},
+    {"lime",           96, 255,  96},
+    {"light green",   144, 238, 144},
+    {"yellow",        255, 255,   0},
+    {"dark yellow",   204, 204,   0},
+    {"amber",         255, 191,   0},
+    {"lavender",      230, 230, 250},
+    {"purple",        128,   0, 128},
+    {"indigo",         75,   0, 130},
+    {"bluebell",      162, 162, 208},
+    {"violet",        138,  43, 226},
+    {"magenta",       255,   0, 255},
+    {"orange",        255, 165,   0},
+    {"dark orange",   255, 140,   0},
+    {"tan",           210, 180, 140},
+    {"brown",         165,  42,  42},
+    {"dark brown",    101,  67,  33},
+    {"chrome",        160, 160, 160},
+    {"silver",        192, 192, 192},
+    {"gold",          239, 191,   4},
+    {"brass",         181, 166,  66},
+    {"platinum",      229, 228, 226}
 };
 
 // create empty table
 int colour_init(sqlite3* db)
 {
     // sqlite create_table query
-    const char* create_table_sql = 
+    const char* create_table_sql =
         "CREATE TABLE IF NOT EXISTS colour ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-        "name TEXT NOT NULL, "
+        "name TEXT NOT NULL UNIQUE CHECK(length(name) BETWEEN 1 AND 64), "
         "r INTEGER NOT NULL CHECK(r >= 0 AND r <= 255), "
         "g INTEGER NOT NULL CHECK(g >= 0 AND g <= 255), "
         "b INTEGER NOT NULL CHECK(b >= 0 AND b <= 255));";
 
-    // pointer to store error message
-    char* err_msg = NULL;
-
     // execute sqlite function (store result in int)
     // the nulls are callback function and callback args
-    int rc = sqlite3_exec(db, create_table_sql, NULL, NULL, &err_msg);
+    int return_code = sqlite3_exec(db, create_table_sql, NULL, NULL, NULL);
 
-    // error handling
-    if (rc != SQLITE_OK)
+    // handle error
+    if (return_code != SQLITE_OK)
     {
-        fprintf(stderr, "colour table insert fail: %s\n", err_msg);
-        sqlite3_free(err_msg);
-    }
-    else
-    {
-        printf("colour table init sucess\n");
+        fprintf(stderr, "colour_init fail: %s\n", sqlite3_errmsg(db));
+        return return_code;
     }
 
-    // return the return code
-    return rc;
+    // exit
+    printf("colour_init sucess\n");
+    return return_code;
 }
 
-// insert colours into the table
+// insert date into table
 int colour_insert(sqlite3* db)
 {
-    // variable to avoid magic numbers
-    const int NULL_TERMINATED_STRING = -1;
-
     //sqlite insert query
     const char* insert_sql = "INSERT INTO colour (name, r, g, b) VALUES (?, ?, ?, ?)";
 
@@ -113,59 +115,60 @@ int colour_insert(sqlite3* db)
     // prepare sqlite statement (store result in int)
     // prepare for repeated use (sqlite3_step)
     // prepare does not return an errmsg
-    int rc = sqlite3_prepare_v2(db, insert_sql, -1, &stmt, NULL);
+    int return_code = sqlite3_prepare_v2(db, insert_sql, STR_AUTO_LENGTH, &stmt, NULL);
 
     // handle errors
-    if (rc != SQLITE_OK)
+    if (return_code != SQLITE_OK)
     {
-        fprintf(stderr, "colour insert prepare fail: %s\n", sqlite3_errmsg(db));
-        return rc;
+        fprintf(stderr, "colour_insert prepare fail: %s\n", sqlite3_errmsg(db));
+        return return_code;
     }
 
     // Begin transaction (avoids numerous individuals writes)
-    sqlite3_exec(db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
+    return_code = sqlite3_exec(db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
 
-
-    if (rc != SQLITE_OK)
+    // handle errors
+    if (return_code != SQLITE_OK)
     {
-        fprintf(stderr, "colour insert transaction fail: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "colour_insert transaction fail: %s\n", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
-        return rc;
+        return return_code;
     }
 
     // Loop through colour data and insert each colour
     for (size_t i = 0; i < sizeof(colour_data) / sizeof(colour_data[0]); i++)
     {
-        sqlite3_bind_text(stmt, 1, colour_data[i].name, NULL_TERMINATED_STRING, SQLITE_STATIC);
-        sqlite3_bind_int(stmt, 2, colour_data[i].r);
-        sqlite3_bind_int(stmt, 3, colour_data[i].g);
-        sqlite3_bind_int(stmt, 4, colour_data[i].b);
+        sqlite3_bind_text(stmt, COLOUR_NAME_BIND, colour_data[i].name, STR_AUTO_LENGTH, SQLITE_STATIC);
+        sqlite3_bind_int(stmt, COLOUR_R_BIND, colour_data[i].r);
+        sqlite3_bind_int(stmt, COLOUR_G_BIND, colour_data[i].g);
+        sqlite3_bind_int(stmt, COLOUR_B_BIND, colour_data[i].b);
 
         // insert one row of sqlite
-        rc = sqlite3_step(stmt);
+        return_code = sqlite3_step(stmt);
 
         // error handling
-        if (rc != SQLITE_DONE)
+        if (return_code != SQLITE_DONE)
         {
             // rollback
-            fprintf(stderr, "colour insert '%s' fail: %s\n", colour_data[i].name, sqlite3_errmsg(db));
-            printf("rolling back changes");
-            sqlite3_exec(db, "ROLLBACK;", 0, 0, 0);
+            fprintf(stderr, "colour_insert step fail after '%s': %s\n", colour_data[i].name, sqlite3_errmsg(db));
+            printf("rolling back changes\n");
+            sqlite3_exec(db, "ROLLBACK;", NULL, NULL, NULL);
             sqlite3_finalize(stmt);
-            return rc;
+            return return_code;
         }
 
         // prepare for another sqlite_step(stmt)
-        rc = sqlite3_reset(stmt);
+        return_code = sqlite3_reset(stmt);
 
         // error handling
-        if (rc != SQLITE_OK)
+        if (return_code != SQLITE_OK)
         {
-            fprintf(stderr, "colour insert reset fail after '%s': %s\n", colour_data[i].name, sqlite3_errmsg(db));
-            printf("rolling back changes");
+            // rollback
+            fprintf(stderr, "colour_insert reset fail after '%s': %s\n", colour_data[i].name, sqlite3_errmsg(db));
+            printf("rolling back changes\n");
             sqlite3_exec(db, "ROLLBACK;", NULL, NULL, NULL);
             sqlite3_finalize(stmt);
-            return rc;
+            return return_code;
         }
 
         // explicitly set all parameters back to NULL (not necessary currently, may be removed)
@@ -173,40 +176,103 @@ int colour_insert(sqlite3* db)
     }
 
     // commit transaction
-    sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
+    return_code = sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
+
+    // handle errors
+    if (return_code != SQLITE_OK)
+    {
+        fprintf(stderr, "colour_insert commit fail: %s\n", sqlite3_errmsg(db));
+        sqlite3_exec(db, "ROLLBACK;", NULL, NULL, NULL);
+        sqlite3_finalize(stmt);
+        return return_code;
+    }
 
     //commit changes to database
     sqlite3_finalize(stmt);
 
-    //exit
-    printf("colour insert into colour table success\n");
-    return rc;
+    //exit function
+    printf("colour_insert success\n");
+    return return_code;
 }
 
-// init and insert data
+// init then insert data into table
 int colour_create(sqlite3* db)
 {
-    // init return code
-    int rc = 0;
-
     // init colour table
-    rc = colour_init(db);
+    int return_code = colour_init(db);
 
-    // handle error
-    if (rc != SQLITE_OK)
+    // handle errors
+    if (return_code != SQLITE_OK)
     {
-        return rc;
+
+        fprintf(stderr, "colour_create fail: %s\n", sqlite3_errmsg(db));
+        return return_code;
     }
 
     // insert colour data into colour table
-    rc = colour_insert(db);
+    return_code = colour_insert(db);
 
-    // handle error
-    if (rc != SQLITE_OK)
+    // handle errors
+    if (return_code != SQLITE_OK)
     {
-        return rc;
+        fprintf(stderr, "colour_create fail: %s\n", sqlite3_errmsg(db));
+        return return_code;
     }
 
-    // return the return code
-    return rc;
+    // exit function
+    printf("colour_create success\n");
+    return return_code;
+}
+
+// return id given a name
+int colour_get_id(sqlite3* db, const char* name)
+{
+    // sqlite colour_get_id query
+    const char* sql_query =
+        "SELECT id "
+        "FROM colour "
+        "WHERE name = ?;";
+
+    // pointer to store sqlite statement object
+    sqlite3_stmt* stmt;
+
+    int return_code = sqlite3_prepare_v2(db, sql_query, -1, &stmt, NULL);
+
+    // handle error
+    if (return_code != SQLITE_OK)
+    {
+        fprintf(stderr, "colour_get_id prepare fail: %s\n", sqlite3_errmsg(db));
+        return -1;
+    }
+
+    return_code = sqlite3_bind_text(stmt, 1, name, -1, SQLITE_STATIC);
+
+    // handle error
+    if (return_code != SQLITE_OK)
+    {
+        fprintf(stderr,"colour_get_id bind fail: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return -1;
+    }
+
+    return_code = sqlite3_step(stmt);
+
+    if (return_code == SQLITE_ROW)
+    {
+        int id = sqlite3_column_int(stmt, 0);
+        sqlite3_finalize(stmt);
+        return id;
+    }
+
+    // if it returns nothing
+    if (return_code == SQLITE_DONE)
+    {
+        fprintf(stderr, "colour_get_id: colour '%s' not found\n", name);
+        sqlite3_finalize(stmt);
+        return -1;
+    }
+
+    fprintf(stderr, "colour_get_id step fail: %s\n", sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
 }

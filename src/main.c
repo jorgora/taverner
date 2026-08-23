@@ -3,6 +3,8 @@
 #include <sqlite3.h>
 
 #include "../headers/sql/colour/colour.h"
+#include "../headers/sql/colour/colour_keyword.h"
+#include "../headers/sql/colour/colour_keyword_relation.h"
 
 // Handle command-line arguments and print them
 void handle_cmd_args(int argc, char** argv)
@@ -19,6 +21,22 @@ void handle_cmd_args(int argc, char** argv)
     }
 }
 
+void colour_print(sqlite3* db)
+{
+    printf("colour_get_id('colourless') = %d\n", colour_get_id(db, "colourless"));
+    printf("colour_get_id('black') =  %d\n", colour_get_id(db, "black"));
+    printf("colour_get_id('white') =  %d\n", colour_get_id(db, "white"));
+    printf("colour_get_id('ERROR_COLOUR') =  %d\n\n", colour_get_id(db, "ERROR_COLOUR"));
+}
+
+void colour_keyword_print(sqlite3* db)
+{
+    printf("colour_keyword_get_id('none') = %d\n", colour_keyword_get_id(db, "none"));
+    printf("colour_keyword_get_id('light') =  %d\n", colour_keyword_get_id(db, "light"));
+    printf("colour_keyword_get_id('greyscale') =  %d\n", colour_keyword_get_id(db, "greyscale"));
+    printf("colour_keyord_get_id('ERROR_COLOUR_KEYWORD') =  %d\n\n", colour_keyword_get_id(db, "ERROR_COLOUR_KEYWORD"));
+}
+
 int main(int argc, char** argv)
 {
     // Handle command-line arguments
@@ -33,21 +51,27 @@ int main(int argc, char** argv)
     // handle database not openning
     if (rc)
     {
-        // if fail
-        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+        // if fail, exit
+        fprintf(stderr, "open database fail: %s\n", sqlite3_errmsg(db));
         return 0;
     }
-    else
-    {
-        // if success
-        printf("Opened database successfully\n");
 
-        // create colour table
-        colour_create(db);
+    // if success, run program
+    printf("open database success\n");
 
-        // close database
-        sqlite3_close(db);
-    }
+    // create colour table
+    colour_create(db);
+    colour_print(db);
+
+    // create colour_keyword table
+    colour_keyword_create(db);
+    colour_keyword_print(db);
+
+    // create colour_keyword_relation_table
+    colour_keyword_relation_create(db);
+
+    // close database
+    sqlite3_close(db);
 
     // end program
     return EXIT_SUCCESS;

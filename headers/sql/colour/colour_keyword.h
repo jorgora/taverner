@@ -8,12 +8,18 @@ typedef struct
     const char* name;
 } Colour_keyword;
 
-//init functions
-void colour_keyword_init(sqlite3* db);
-void colour_keyword_insert(sqlite3* db);
+// create empty table
+int colour_keyword_init(sqlite3* db);
 
-//create the actual table
+// insert data into table
+int colour_keyword_insert(sqlite3* db);
+
+// init then insert data into table
 int colour_keyword_create(sqlite3* db);
+
+// return id given a name
+int colour_keyword_get_id(sqlite3* db, const char* name);
+
 #endif
 
 
