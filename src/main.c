@@ -34,7 +34,7 @@ void colour_keyword_print(sqlite3* db)
     printf("colour_keyword_get_id('none') = %d\n", colour_keyword_get_id(db, "none"));
     printf("colour_keyword_get_id('light') =  %d\n", colour_keyword_get_id(db, "light"));
     printf("colour_keyword_get_id('greyscale') =  %d\n", colour_keyword_get_id(db, "greyscale"));
-    printf("colour_keyord_get_id('ERROR_COLOUR_KEYWORD') =  %d\n\n", colour_keyword_get_id(db, "ERROR_COLOUR_KEYWORD"));
+    printf("colour_keyword_get_id('ERROR_COLOUR_KEYWORD') =  %d\n\n", colour_keyword_get_id(db, "ERROR_COLOUR_KEYWORD"));
 }
 
 int main(int argc, char** argv)

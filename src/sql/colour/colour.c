@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "../../../headers/sql/colour/colour.h"
+#include "../../../headers/sql/sql_utils.h"
 
 // enum to show binds in function (remove magic number)
 typedef enum {
@@ -79,7 +80,7 @@ static const Colour colour_data[] = {
 int colour_init(sqlite3* db)
 {
     // sqlite create_table query
-    const char* create_table_sql =
+    const char* create_table_query =
         "CREATE TABLE IF NOT EXISTS colour ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "name TEXT NOT NULL UNIQUE CHECK(length(name) BETWEEN 1 AND 64), "
@@ -87,20 +88,7 @@ int colour_init(sqlite3* db)
         "g INTEGER NOT NULL CHECK(g >= 0 AND g <= 255), "
         "b INTEGER NOT NULL CHECK(b >= 0 AND b <= 255));";
 
-    // execute sqlite function (store result in int)
-    // the nulls are callback function and callback args
-    int return_code = sqlite3_exec(db, create_table_sql, NULL, NULL, NULL);
-
-    // handle error
-    if (return_code != SQLITE_OK)
-    {
-        fprintf(stderr, "colour_init fail: %s\n", sqlite3_errmsg(db));
-        return return_code;
-    }
-
-    // exit
-    printf("colour_init sucess\n");
-    return return_code;
+    return sql_exec("colour_init", db, create_table_query);
 }
 
 // insert date into table
@@ -117,23 +105,14 @@ int colour_insert(sqlite3* db)
     // prepare does not return an errmsg
     int return_code = sqlite3_prepare_v2(db, insert_sql, STR_AUTO_LENGTH, &stmt, NULL);
 
-    // handle errors
     if (return_code != SQLITE_OK)
     {
-        fprintf(stderr, "colour_insert prepare fail: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "ERROR: colour_insert prepare fail: %s\n", sqlite3_errmsg(db));
         return return_code;
     }
 
     // Begin transaction (avoids numerous individuals writes)
-    return_code = sqlite3_exec(db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
-
-    // handle errors
-    if (return_code != SQLITE_OK)
-    {
-        fprintf(stderr, "colour_insert transaction fail: %s\n", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        return return_code;
-    }
+    return_code = sql_exec("colour_insert_begin_transaction", db, "BEGIN TRANSACTION;");
 
     // Loop through colour data and insert each colour
     for (size_t i = 0; i < sizeof(colour_data) / sizeof(colour_data[0]); i++)
@@ -146,13 +125,11 @@ int colour_insert(sqlite3* db)
         // insert one row of sqlite
         return_code = sqlite3_step(stmt);
 
-        // error handling
         if (return_code != SQLITE_DONE)
         {
             // rollback
-            fprintf(stderr, "colour_insert step fail after '%s': %s\n", colour_data[i].name, sqlite3_errmsg(db));
-            printf("rolling back changes\n");
-            sqlite3_exec(db, "ROLLBACK;", NULL, NULL, NULL);
+            fprintf(stderr, "ERROR: colour_insert step fail after '%s': %s\n", colour_data[i].name, sqlite3_errmsg(db));
+            return_code = sql_exec("colour_insert_rollback", db, "ROLLBACK;");
             sqlite3_finalize(stmt);
             return return_code;
         }
@@ -160,13 +137,11 @@ int colour_insert(sqlite3* db)
         // prepare for another sqlite_step(stmt)
         return_code = sqlite3_reset(stmt);
 
-        // error handling
         if (return_code != SQLITE_OK)
         {
             // rollback
-            fprintf(stderr, "colour_insert reset fail after '%s': %s\n", colour_data[i].name, sqlite3_errmsg(db));
-            printf("rolling back changes\n");
-            sqlite3_exec(db, "ROLLBACK;", NULL, NULL, NULL);
+            fprintf(stderr, "ERROR: colour_insert reset fail after '%s': %s\n", colour_data[i].name, sqlite3_errmsg(db));
+            return_code = sql_exec("colour_insert_rollback", db, "ROLLBACK;");
             sqlite3_finalize(stmt);
             return return_code;
         }
@@ -176,16 +151,7 @@ int colour_insert(sqlite3* db)
     }
 
     // commit transaction
-    return_code = sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL);
-
-    // handle errors
-    if (return_code != SQLITE_OK)
-    {
-        fprintf(stderr, "colour_insert commit fail: %s\n", sqlite3_errmsg(db));
-        sqlite3_exec(db, "ROLLBACK;", NULL, NULL, NULL);
-        sqlite3_finalize(stmt);
-        return return_code;
-    }
+    return_code = sql_exec("colour_insert_commit", db, "COMMIT");
 
     //commit changes to database
     sqlite3_finalize(stmt);
@@ -201,21 +167,19 @@ int colour_create(sqlite3* db)
     // init colour table
     int return_code = colour_init(db);
 
-    // handle errors
     if (return_code != SQLITE_OK)
     {
 
-        fprintf(stderr, "colour_create fail: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "ERROR: colour_create fail: %s\n", sqlite3_errmsg(db));
         return return_code;
     }
 
     // insert colour data into colour table
     return_code = colour_insert(db);
 
-    // handle errors
     if (return_code != SQLITE_OK)
     {
-        fprintf(stderr, "colour_create fail: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "ERROR: colour_create fail: %s\n", sqlite3_errmsg(db));
         return return_code;
     }
 
@@ -238,19 +202,17 @@ int colour_get_id(sqlite3* db, const char* name)
 
     int return_code = sqlite3_prepare_v2(db, sql_query, -1, &stmt, NULL);
 
-    // handle error
     if (return_code != SQLITE_OK)
     {
-        fprintf(stderr, "colour_get_id prepare fail: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "ERROR: colour_get_id prepare fail: %s\n", sqlite3_errmsg(db));
         return -1;
     }
 
     return_code = sqlite3_bind_text(stmt, 1, name, -1, SQLITE_STATIC);
 
-    // handle error
     if (return_code != SQLITE_OK)
     {
-        fprintf(stderr,"colour_get_id bind fail: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr,"ERROR: colour_get_id bind fail: %s\n", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         return -1;
     }
@@ -264,15 +226,14 @@ int colour_get_id(sqlite3* db, const char* name)
         return id;
     }
 
-    // if it returns nothing
     if (return_code == SQLITE_DONE)
     {
-        fprintf(stderr, "colour_get_id: colour '%s' not found\n", name);
+        fprintf(stderr, "ERROR: colour_get_id: colour '%s' not found\n", name);
         sqlite3_finalize(stmt);
         return -1;
     }
 
-    fprintf(stderr, "colour_get_id step fail: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "ERROR: colour_get_id step fail: %s\n", sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
     return -1;
 }
