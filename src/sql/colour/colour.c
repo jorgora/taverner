@@ -205,7 +205,7 @@ int colour_get_id(sqlite3* db, const char* name)
     if (return_code != SQLITE_OK)
     {
         fprintf(stderr, "ERROR: colour_get_id prepare fail: %s\n", sqlite3_errmsg(db));
-        return -1;
+        return return_code;
     }
 
     return_code = sqlite3_bind_text(stmt, 1, name, -1, SQLITE_STATIC);
@@ -214,7 +214,7 @@ int colour_get_id(sqlite3* db, const char* name)
     {
         fprintf(stderr,"ERROR: colour_get_id bind fail: %s\n", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
-        return -1;
+        return return_code;
     }
 
     return_code = sqlite3_step(stmt);
@@ -230,10 +230,10 @@ int colour_get_id(sqlite3* db, const char* name)
     {
         fprintf(stderr, "ERROR: colour_get_id: colour '%s' not found\n", name);
         sqlite3_finalize(stmt);
-        return -1;
+        return return_code;
     }
 
     fprintf(stderr, "ERROR: colour_get_id step fail: %s\n", sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-    return -1;
+    return return_code;
 }

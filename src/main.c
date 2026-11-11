@@ -46,14 +46,14 @@ int main(int argc, char** argv)
     sqlite3* db;
 
     // use pointer to open databse
-    int rc = sqlite3_open("taverner.db", &db);
+    int return_code = sqlite3_open("taverner.db", &db);
 
     // handle database not openning
-    if (rc)
+    if (return_code)
     {
         // if fail, exit
         fprintf(stderr, "open database fail: %s\n", sqlite3_errmsg(db));
-        return 0;
+        return EXIT_FAILURE;
     }
 
     // if success, run program
