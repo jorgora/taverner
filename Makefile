@@ -47,4 +47,4 @@ tests/test_%: tests/test_%.c $(filter-out src/main.o, $(OBJ))
 
 # remove objects and executables
 clean:
-	rm -f $(OBJ) $(EXEC) taverner.db
+	rm -f $(OBJ) $(TEST_OBJ) $(EXEC) taverner.db
