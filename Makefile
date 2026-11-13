@@ -1,30 +1,50 @@
-# Define the compiler and flags
+# taverner makefile
+
+# compiler
 CC = clang
+
+# compiler flags
 CFLAGS = -Wall -Wextra -pedantic -Wno-gnu-statement-expression
+
+# linker flags
 LDFLAGS = -lsqlite3 -lcmocka -lSDL2
 
-# Directories
+# header files
 INCLUDES = -Iheaders
 
-# Files
-# We use 'filter-out' to remove main.c from the test build
+# list all .c files in src
 SRC = $(shell find src -name "*.c")
+
+# for each .c file, create a .o object file
 OBJ = $(SRC:.c=.o)
+
+# list all .c files in tests
 TEST_SRC = $(wildcard tests/*.c)
+
+TEST_OBJ = $(TEST_SRC:.c=)
+
+# name of executable
 EXEC = taverner
 
+# default target to build project when "make" is run with no args
 all: $(EXEC)
 
+# rule to create executable file from object files
 $(EXEC): $(OBJ)
 	$(CC) $(OBJ) -o $(EXEC) $(LDFLAGS)
 
-# Test target: compiles src files (except main) and test files
-test: $(filter-out src/main.o, $(OBJ))
-	$(CC) $(CFLAGS) $(INCLUDES) $(filter-out src/main.o, $(OBJ)) $(TEST_SRC) -o test_runner $(LDFLAGS)
-	./test_runner
+test: $(TEST_OBJ)
+	@for t in $(TEST_OBJ); do ./$$t || exit 1; done
 
+# Test target: compiles src files (except main) and test files
+# pattern rule
+tests/test_%: tests/test_%.c $(filter-out src/main.o, $(OBJ))
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -lcmocka $(LDFLAGS) -o $@
+
+# rule to compile .c files into .o object files
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
+# remove objects and executables
 clean:
-	rm -f $(OBJ) $(EXEC) test_runner taverner.db
+	rm -f $(OBJ) $(EXEC) taverner.db

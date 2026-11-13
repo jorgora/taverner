@@ -12,16 +12,16 @@ C seems to need a LOT of housekeeping or it gets terrible fast.
 *** TODO make sure no awful code is included
 
 ** TODO recheck think of refactoring opportunities
+I think a basic_table abstraction can be made.
 
-I think a basic_table abstraction can be made. If not this, abstractions
+If not this, abstractions
 to what goes on in all c files would be handy, a sql_utils.c for handling
-this shit more smoothly
+this more smoothly
+
+all files refresh, create, etc
 
 ** TODO too much error logging
 I am returning return codes out the wazoo so don't need to log it all to stderr
-* ERRORS
-** TODO investigate error_colour and and error_colour_keyword etc
-i don't know if it's there for testing or not supposed to be there
 
 * DONE DONE TASKS
 ** DONE made sure top level comments are correct and consistent

@@ -21,19 +21,28 @@ void handle_cmd_args(int argc, char** argv)
     }
 }
 
+// logging function for colour
 void colour_print(sqlite3* db)
 {
+    // test colour works
     printf("colour_get_id('colourless') = %d\n", colour_get_id(db, "colourless"));
     printf("colour_get_id('black') =  %d\n", colour_get_id(db, "black"));
     printf("colour_get_id('white') =  %d\n", colour_get_id(db, "white"));
+
+    // test an error happens when it doesn't exist
     printf("colour_get_id('ERROR_COLOUR') =  %d\n\n", colour_get_id(db, "ERROR_COLOUR"));
 }
 
+// logging function for colour_keyword
 void colour_keyword_print(sqlite3* db)
 {
+    // test colour_keyword works
     printf("colour_keyword_get_id('none') = %d\n", colour_keyword_get_id(db, "none"));
     printf("colour_keyword_get_id('light') =  %d\n", colour_keyword_get_id(db, "light"));
     printf("colour_keyword_get_id('greyscale') =  %d\n", colour_keyword_get_id(db, "greyscale"));
+
+
+    // test an error happens when it doesn't exist
     printf("colour_keyword_get_id('ERROR_COLOUR_KEYWORD') =  %d\n\n", colour_keyword_get_id(db, "ERROR_COLOUR_KEYWORD"));
 }
 
@@ -61,10 +70,12 @@ int main(int argc, char** argv)
 
     // create colour table
     colour_create(db);
+    // log 
     colour_print(db);
 
     // create colour_keyword table
     colour_keyword_create(db);
+    // log
     colour_keyword_print(db);
 
     // create colour_keyword_relation_table
